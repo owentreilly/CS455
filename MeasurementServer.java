@@ -39,7 +39,7 @@ public class MeasurementServer {
                         out.println("200 OK:Ready");
                     } else {
                         System.err.println("404 ERROR: Invalid Connection Setup Message");
-                        in.close();
+                        System.exit(1);
                     } 
                 } else if (protocolPhase.equals("m")) {
                     if (msgarr.length == 3) {
@@ -55,15 +55,17 @@ public class MeasurementServer {
                         }
                     } else {
                         System.err.println("404 ERROR: Invalid Measurement Message");
-                        in.close();
+                        System.exit(1);
                     } 
                 } else if (protocolPhase.equals("t")) {
                     if (msg.equals("t")) {
                         out.println("200 OK: Closing Connection");
                         in.close();
+                        out.close();
+                        clientSocket.close();
                     } else {
                         System.err.println("404 ERROR: Invalid Connection Termination Message");
-                        in.close();
+                        System.exit(1);
                     } 
                 }
             }

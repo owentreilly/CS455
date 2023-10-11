@@ -9,7 +9,7 @@ public class MeasurementClient {
     public static String payloader(int messageSize) {
         String payload = "";
         for (int i = 0; i < messageSize; i++) {
-            payload += "x";
+            payload += "s";
         }
         return payload;
     }
@@ -36,73 +36,81 @@ public class MeasurementClient {
             String userInput;
             while ((userInput = stdIn.readLine()) != null) {
                 String[] usermsg = userInput.split(" ");
-                if (usermsg.length != 5){
-                    System.err.println("404 ERROR: Invalid Connection Setup Message");
-                    System.exit(1);
-                }
+
+                String protocolPhase = usermsg[0];
                 String measurementType = usermsg[1];
-                int numProbes = Integer.parseInt(usermsg[2]);
-                int messageSize = Integer.parseInt(usermsg[3]);
-                int serverDelay = Integer.parseInt(usermsg[4]);
+                int numProbes = 0;
+                int serverDelay;
+                int messageSize = 1;
+                
                 String servermsg;
 
                 out.println(userInput);
                 System.out.println(userInput);
+                if (usermsg[0].equals("t")) {
+                        System.out.println("Connection closed.");
+                        out.close();
+                        System.exit(0);
+                    }
+                if (usermsg.length == 5) {
+
+                    numProbes = Integer.parseInt(usermsg[2]);
+                    messageSize = Integer.parseInt(usermsg[3]);
+                    serverDelay = Integer.parseInt(usermsg[4]);
+                    
+
+                }
+                if (usermsg.length != 5) {
+                    
+                    if ((usermsg[0].equals("m")) == false) {
+                        System.err.println("404 ERROR: Invalid Connection Setup Message");
+                        System.exit(1);
+                    }
+                    if (usermsg.length != 3) {
+                        System.err.println("404 ERROR: Invalid Measurement Message");
+                        System.exit(1);
+                    }
+
+                }
 
                 // if message is received, start measurement phase
                 long totalTime = 0;
                 servermsg = in.readLine();
-                System.out.println(servermsg);
+
                 if (servermsg.equals("200 OK:Ready")) {
-                    if(measurementType.equals("rtt")) // Average Round Trip Time Measurement of all payload (ms)
-                    {
                     for (int i = 1; i < numProbes + 1; i++) {
                         String payload = payloader(messageSize);
                         long sent = System.currentTimeMillis();
-                        System.out.println("current time before sending message: " + sent);
+
                         out.println("m " + i + " " + payload + "\n");
                         System.out.println("echo: " + in.readLine());
-                        try {
-                            Thread.sleep(serverDelay);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
+
                         long received = System.currentTimeMillis();
-                        System.out.println("current time after sending message: " + received);
+
                         long delay = received - sent;
-                        System.out.println("delay: " + delay);
+                        System.out.println("delay: " + delay + "ms");
                         totalTime += delay;
                     }
-                    double rtt = (double) totalTime / (double) numProbes;
-                    System.out.println(rtt);
-                } else if (measurementType.equals("tput")) //throughput measurement
-                {
-                    for (int i = 1; i < numProbes + 1; i++) {
-                        String payload = payloader(messageSize);
-                        long sent = System.currentTimeMillis();
-                        System.out.println("current time before sending message: " + sent);
-                        out.println("m " + i + " " + payload + "\n");
-                        System.out.println("echo: " + in.readLine());
-                        try {
-                            Thread.sleep(serverDelay);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        long received = System.currentTimeMillis();
-                        System.out.println("current time after sending message: " + received);
-                        
-                        
+                    if (measurementType.equals("rtt")) // Average Round Trip Time Measurement of all payload (ms)
+                    {
+
+                        double rtt = (double) totalTime / (double) numProbes;
+                        System.out.println("Avg rtt: " + rtt + "ms");
+                    } else if (measurementType.equals("tput")) { // Throughput Measurement of all payload (bits/sec)
+                        double tput = (numProbes * messageSize * 8) / (double) totalTime;
+                        System.out.println("throughput is: " + tput);
+                    } else {
+                        System.err.println("404 ERROR: Invalid Measurement Type");
+                        System.out.println("Connection closed.");
+                        in.close();
+                        System.exit(0);
                     }
-                    double tput = (double) (numProbes * messageSize * 8) / (double) totalTime;
-                    System.out.println(tput);
-                } else {
-                    System.err.println("404 ERROR: Invalid Measurement Type");
-                    System.exit(1);
                 }
-            }
 
                 if (servermsg.equals("200 OK: Closing Connection")) {
-                    System.exit(0);
+                    socket.close();
+                    System.out.println("Connection closed.");
+                    System.exit(1);
                 }
             }
 
