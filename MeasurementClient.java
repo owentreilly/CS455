@@ -9,7 +9,7 @@ public class MeasurementClient {
     public static String payloader(int messageSize) {
         String payload = "";
         for (int i = 0; i < messageSize; i++) {
-            payload += "s";
+            payload += "x";
         }
         return payload;
     }
@@ -38,30 +38,30 @@ public class MeasurementClient {
                 String[] usermsg = userInput.split(" ");
 
                 String protocolPhase = usermsg[0];
-                String measurementType = usermsg[1];
+                String measurementType = "";
                 int numProbes = 0;
                 int serverDelay;
                 int messageSize = 1;
-                
+
                 String servermsg;
 
                 out.println(userInput);
                 System.out.println(userInput);
                 if (usermsg[0].equals("t")) {
-                        System.out.println("Connection closed.");
-                        out.close();
-                        System.exit(0);
-                    }
+                    System.out.println("Connection closed.");
+                    out.close();
+                    System.exit(0);
+                }
+                // error checking
                 if (usermsg.length == 5) {
-
+                    measurementType = usermsg[1];
                     numProbes = Integer.parseInt(usermsg[2]);
                     messageSize = Integer.parseInt(usermsg[3]);
                     serverDelay = Integer.parseInt(usermsg[4]);
-                    
 
                 }
                 if (usermsg.length != 5) {
-                    
+
                     if ((usermsg[0].equals("m")) == false) {
                         System.err.println("404 ERROR: Invalid Connection Setup Message");
                         System.exit(1);
@@ -96,17 +96,17 @@ public class MeasurementClient {
 
                         double rtt = (double) totalTime / (double) numProbes;
                         System.out.println("Avg rtt: " + rtt + "ms");
-                    } else if (measurementType.equals("tput")) { // Throughput Measurement of all payload (bits/sec)
-                        double tput = (numProbes * messageSize * 8) / (double) totalTime;
-                        System.out.println("throughput is: " + tput);
+                    } else if (measurementType.equals("tput")) { // Throughput Measurement of all payload (bits/msec)
+                        double tput = (numProbes * messageSize) / (double) totalTime;
+                        System.out.println("throughput is: " + tput + " bits/ms");
                     } else {
                         System.err.println("404 ERROR: Invalid Measurement Type");
                         System.out.println("Connection closed.");
-                        in.close();
+
                         System.exit(0);
                     }
                 }
-
+                // if message is received, start termination phase
                 if (servermsg.equals("200 OK: Closing Connection")) {
                     socket.close();
                     System.out.println("Connection closed.");
